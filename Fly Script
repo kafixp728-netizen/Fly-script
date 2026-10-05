@@ -1,163 +1,156 @@
+--// Fake Chat Simulator GUI
+--// For your own Roblox experience
+--// Creates a local fake-chat window
+
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
-local camera = workspace.CurrentCamera
+local playerGui = player:WaitForChild("PlayerGui")
 
-local flying = false
-local speed = 60
-
-local bodyVelocity
-local bodyGyro
-local flyConnection
-
---// Character
-local character = player.Character or player.CharacterAdded:Wait()
-local humanoid = character:WaitForChild("Humanoid")
-local rootPart = character:WaitForChild("HumanoidRootPart")
-
-player.CharacterAdded:Connect(function(char)
-	character = char
-	humanoid = char:WaitForChild("Humanoid")
-	rootPart = char:WaitForChild("HumanoidRootPart")
-
-	if flying then
-		task.wait(0.2)
-
-		bodyVelocity = Instance.new("BodyVelocity")
-		bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-		bodyVelocity.Velocity = Vector3.zero
-		bodyVelocity.Parent = rootPart
-
-		bodyGyro = Instance.new("BodyGyro")
-		bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-		bodyGyro.P = 100000
-		bodyGyro.CFrame = camera.CFrame
-		bodyGyro.Parent = rootPart
-	end
-end)
-
+--// ScreenGui
 local gui = Instance.new("ScreenGui")
-gui.Name = "KiroFlyGUI"
+gui.Name = "FakeChatGUI"
 gui.ResetOnSpawn = false
-gui.Parent = player:WaitForChild("PlayerGui")
+gui.Parent = playerGui
 
-local button = Instance.new("TextButton")
-button.Name = "FlyButton"
-button.Size = UDim2.new(0, 170, 0, 55)
-button.Position = UDim2.new(0.5, -85, 0.8, 0)
-button.BackgroundColor3 = Color3.fromRGB(220, 40, 40)
-button.TextColor3 = Color3.fromRGB(255, 255, 255)
-button.Text = "🔴 FLY: OFF"
-button.TextScaled = true
-button.Font = Enum.Font.GothamBold
-button.AutoButtonColor = false
-button.Parent = gui
+--// Main frame
+local main = Instance.new("Frame")
+main.Name = "Main"
+main.Size = UDim2.new(0, 360, 0, 430)
+main.Position = UDim2.new(0.5, -180, 0.5, -215)
+main.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+main.BorderSizePixel = 0
+main.Parent = gui
 
 local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 14)
-corner.Parent = button
+corner.CornerRadius = UDim.new(0, 12)
+corner.Parent = main
 
-local function startFly()
-	if flying then return end
-	flying = true
+--// Title
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 45)
+title.BackgroundTransparency = 1
+title.Text = "💬 Fake Chat Simulator"
+title.TextColor3 = Color3.fromRGB(255,255,255)
+title.TextSize = 20
+title.Font = Enum.Font.GothamBold
+title.Parent = main
 
-	button.BackgroundColor3 = Color3.fromRGB(40, 200, 80)
-	button.Text = "🟢 FLY: ON"
+--// Chat display
+local chatBox = Instance.new("ScrollingFrame")
+chatBox.Name = "ChatBox"
+chatBox.Size = UDim2.new(1, -20, 0, 245)
+chatBox.Position = UDim2.new(0, 10, 0, 55)
+chatBox.BackgroundColor3 = Color3.fromRGB(15,15,18)
+chatBox.BorderSizePixel = 0
+chatBox.ScrollBarThickness = 5
+chatBox.AutomaticCanvasSize = Enum.AutomaticSize.Y
+chatBox.CanvasSize = UDim2.new(0,0,0,0)
+chatBox.Parent = main
 
-	bodyVelocity = Instance.new("BodyVelocity")
-	bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-	bodyVelocity.Velocity = Vector3.zero
-	bodyVelocity.Parent = rootPart
+local chatCorner = Instance.new("UICorner")
+chatCorner.CornerRadius = UDim.new(0, 8)
+chatCorner.Parent = chatBox
 
-	bodyGyro = Instance.new("BodyGyro")
-	bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-	bodyGyro.P = 100000
-	bodyGyro.CFrame = camera.CFrame
-	bodyGyro.Parent = rootPart
+local layout = Instance.new("UIListLayout")
+layout.Padding = UDim.new(0, 6)
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+layout.Parent = chatBox
 
-	humanoid.PlatformStand = true
+--// Username box
+local usernameBox = Instance.new("TextBox")
+usernameBox.Size = UDim2.new(1, -20, 0, 40)
+usernameBox.Position = UDim2.new(0, 10, 0, 315)
+usernameBox.BackgroundColor3 = Color3.fromRGB(40,40,45)
+usernameBox.BorderSizePixel = 0
+usernameBox.PlaceholderText = "Enter username..."
+usernameBox.Text = ""
+usernameBox.TextColor3 = Color3.fromRGB(255,255,255)
+usernameBox.PlaceholderColor3 = Color3.fromRGB(150,150,150)
+usernameBox.TextSize = 15
+usernameBox.Font = Enum.Font.Gotham
+usernameBox.Parent = main
 
-	flyConnection = RunService.RenderStepped:Connect(function()
-		if not flying or not rootPart or not rootPart.Parent then
-			return
-		end
+local userCorner = Instance.new("UICorner")
+userCorner.CornerRadius = UDim.new(0, 8)
+userCorner.Parent = usernameBox
 
-		local moveDirection = humanoid.MoveDirection
+--// Message box
+local messageBox = Instance.new("TextBox")
+messageBox.Size = UDim2.new(1, -110, 0, 40)
+messageBox.Position = UDim2.new(0, 10, 0, 365)
+messageBox.BackgroundColor3 = Color3.fromRGB(40,40,45)
+messageBox.BorderSizePixel = 0
+messageBox.PlaceholderText = "Type a message..."
+messageBox.Text = ""
+messageBox.TextColor3 = Color3.fromRGB(255,255,255)
+messageBox.PlaceholderColor3 = Color3.fromRGB(150,150,150)
+messageBox.TextSize = 15
+messageBox.Font = Enum.Font.Gotham
+messageBox.ClearTextOnFocus = false
+messageBox.Parent = main
 
-		local vertical = 0
+local msgCorner = Instance.new("UICorner")
+msgCorner.CornerRadius = UDim.new(0, 8)
+msgCorner.Parent = messageBox
 
-		if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-			vertical = 1
-		elseif UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
-			vertical = -1
-		end
+--// Send button
+local sendButton = Instance.new("TextButton")
+sendButton.Size = UDim2.new(0, 90, 0, 40)
+sendButton.Position = UDim2.new(1, -100, 0, 365)
+sendButton.BackgroundColor3 = Color3.fromRGB(70, 120, 255)
+sendButton.BorderSizePixel = 0
+sendButton.Text = "SEND"
+sendButton.TextColor3 = Color3.fromRGB(255,255,255)
+sendButton.TextSize = 15
+sendButton.Font = Enum.Font.GothamBold
+sendButton.Parent = main
 
-		local cameraCF = camera.CFrame
+local sendCorner = Instance.new("UICorner")
+sendCorner.CornerRadius = UDim.new(0, 8)
+sendCorner.Parent = sendButton
 
-		local forward = Vector3.new(
-			cameraCF.LookVector.X,
-			0,
-			cameraCF.LookVector.Z
-		)
+--// Add fake message
+local function addFakeMessage(username, message)
+	if username == "" or message == "" then
+		return
+	end
 
-		local right = Vector3.new(
-			cameraCF.RightVector.X,
-			0,
-			cameraCF.RightVector.Z
-		)
+	local messageFrame = Instance.new("Frame")
+	messageFrame.Size = UDim2.new(1, -10, 0, 45)
+	messageFrame.BackgroundTransparency = 1
+	messageFrame.Parent = chatBox
 
-		if forward.Magnitude > 0 then
-			forward = forward.Unit
-		end
+	local text = Instance.new("TextLabel")
+	text.Size = UDim2.new(1, -10, 1, 0)
+	text.Position = UDim2.new(0, 5, 0, 0)
+	text.BackgroundTransparency = 1
+	text.Text = username .. ": " .. message
+	text.TextColor3 = Color3.fromRGB(235,235,235)
+	text.TextSize = 15
+	text.Font = Enum.Font.Gotham
+	text.TextXAlignment = Enum.TextXAlignment.Left
+	text.TextWrapped = true
+	text.Parent = messageFrame
 
-		if right.Magnitude > 0 then
-			right = right.Unit
-		end
-
-		local horizontal = Vector3.zero
-
-		if moveDirection.Magnitude > 0 then
-			horizontal = moveDirection.Unit * speed
-		end
-
-		local velocity = horizontal + Vector3.new(0, vertical * speed, 0)
-
-		bodyVelocity.Velocity = velocity
-		bodyGyro.CFrame = CFrame.new(rootPart.Position, rootPart.Position + cameraCF.LookVector)
-	end)
+	-- Scroll to bottom
+	task.wait()
+	chatBox.CanvasPosition = Vector2.new(
+		0,
+		math.max(0, chatBox.AbsoluteCanvasSize.Y)
+	)
 end
 
-local function stopFly()
-	if not flying then return end
-	flying = false
+--// Send button
+sendButton.MouseButton1Click:Connect(function()
+	addFakeMessage(usernameBox.Text, messageBox.Text)
+	messageBox.Text = ""
+end)
 
-	button.BackgroundColor3 = Color3.fromRGB(220, 40, 40)
-	button.Text = "🔴 FLY: OFF"
-
-	if flyConnection then
-		flyConnection:Disconnect()
-		flyConnection = nil
-	end
-
-	if bodyVelocity then
-		bodyVelocity:Destroy()
-		bodyVelocity = nil
-	end
-
-	if bodyGyro then
-		bodyGyro:Destroy()
-		bodyGyro = nil
-	end
-
-	humanoid.PlatformStand = false
-end
-
-button.MouseButton1Click:Connect(function()
-	if flying then
-		stopFly()
-	else
-		startFly()
+--// Enter key sends message
+messageBox.FocusLost:Connect(function(enterPressed)
+	if enterPressed then
+		addFakeMessage(usernameBox.Text, messageBox.Text)
+		messageBox.Text = ""
 	end
 end)
